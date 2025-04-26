@@ -15,9 +15,9 @@ import DateTimePickerModal from './DateTimePickerModal';
 import AutoCompleteInput from './AutoCompleteInput';
 
 interface Props {
-  visible: boolean;
-  onClose: () => void;
-  onAdd: (data: {
+  visible: boolean; // xác định modal có đang hiển thị hay không
+  onClose: () => void; // hàm gọi khi đóng modal
+  onAdd: (data: {   // hàm gọi khi lưu nhắc nhở mới
     title: string;
     date: Date;
     time: Date;
@@ -30,11 +30,16 @@ export default function AddReminderModal({
   onClose,
   onAdd,
 }: Props) {
+  // state cho tiêu đề nhắc
   const [title, setTitle] = useState<string>('');
+  // state cho ngày nhắc
   const [date, setDate] = useState<Date>(new Date());
+  // state cho giờ nhắc
   const [time, setTime] = useState<Date>(new Date());
+  // state cho ghi chú tùy chọn
   const [note, setNote] = useState<string>('');
 
+  // hàm xóa dữ liệu trong form về mặc định
   const clearForm = () => {
     setTitle('');
     setDate(new Date());
@@ -42,37 +47,47 @@ export default function AddReminderModal({
     setNote('');
   };
 
+  // xử lý khi nhấn hủy: xóa form và đóng modal
   const handleCancel = () => {
     clearForm();
     onClose();
   };
 
+  // xử lý khi nhấn lưu: gọi onAdd với dữ liệu, rồi xóa form và đóng modal
   const handleSave = () => {
     onAdd({ title, date, time, note });
     clearForm();
     onClose();
   };
 
+  // vô hiệu nút Lưu nếu tiêu đề đang trống
   const isSaveDisabled = title.trim().length === 0;
 
   return (
+    // Modal React Native với hiệu ứng trượt và nền trong suốt
     <Modal visible={visible} transparent animationType="slide">
+      {/* bắt sự kiện chạm ra ngoài để đóng modal */}
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
+          {/* tránh bàn phím che khuất form*/}
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.keyboardContainer}
           >
+            {/* chặn sự kiện chạm xuống view bên trong không đóng modal */}
             <TouchableWithoutFeedback onPress={() => {}}>
               <View style={styles.container}>
                 <ScrollView showsVerticalScrollIndicator={false}>
+                  {/* nhãn cho input tiêu đề */}
                   <Text style={styles.label}>Tiêu đề</Text>
+                  {/* input có gợi ý hoàn thành tự động */}
                   <AutoCompleteInput
                     value={title}
                     onChange={setTitle}
                   />
-
                   <Text style={styles.label}>Ngày &amp; Giờ nhắc</Text>
+
+                  {/* component chọn ngày giờ */}
                   <DateTimePickerModal
                     date={date}
                     time={time}
@@ -80,6 +95,7 @@ export default function AddReminderModal({
                     onTimeChange={setTime}
                   />
 
+                  {/*Ô nhập ghi chú */}
                   <Text style={styles.label}>Ghi chú (tùy chọn)</Text>
                   <TextInput
                     style={[styles.input, styles.textArea]}
@@ -89,7 +105,7 @@ export default function AddReminderModal({
                     multiline
                   />
                 </ScrollView>
-
+                {/* hai nút Hủy và Lưu */}
                 <View style={styles.buttons}>
                   <View style={styles.buttonWrapper}>
                     <Button

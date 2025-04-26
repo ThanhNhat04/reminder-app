@@ -154,12 +154,18 @@
 
 // src/screens/TodayRemindersScreen.tsx
 import React, { useState, useMemo } from 'react';
+// Import các component cần thiết từ React Native
 import { View, Text, StyleSheet } from 'react-native';
+// Import SafeAreaView để tránh bị đè vào khu vực notch (iPhone, Android)
 import { SafeAreaView } from 'react-native-safe-area-context';
+// Import ReminderGrid để hiển thị danh sách nhắc nhở
 import ReminderGrid from '../components/ReminderGrid';
+// Import Spinner để hiển thị loading
 import Spinner from '../components/Spinner';
+// Import hook custom useReminders để lấy và thao tác với nhắc nhở
 import { useReminders } from '../hooks/useReminders';
 
+// Hàm kiểm tra một ngày có phải hôm nay không
 const isToday = (iso: string) => {
   const d = new Date(iso);
   const now = new Date();
@@ -170,7 +176,9 @@ const isToday = (iso: string) => {
   );
 };
 
+// Component màn hình nhắc nhở hôm nay
 export default function TodayRemindersScreen() {
+  // Lấy danh sách reminders và các hàm thao tác từ hook
   const {
     reminders,
     loading,
@@ -181,29 +189,35 @@ export default function TodayRemindersScreen() {
     refreshReminders,
   } = useReminders();
 
+  // Lọc danh sách reminders chỉ lấy những cái có ngày hôm nay
   const todayReminders = useMemo(
     () => reminders.filter(r => isToday(r.date)),
     [reminders]
   );
 
+  // Nếu đang loading thì hiện spinner
   if (loading) return <Spinner />;
 
   return (
+    // SafeAreaView giúp tránh tràn ra ngoài khu vực an toàn (tai thỏ, viền màn hình)
     <SafeAreaView style={styles.container}>
+      {/* Tiêu đề màn hình */}
       <Text style={styles.title}>Nhắc hôm nay</Text>
 
+      {/* Hiển thị danh sách nhắc nhở hôm nay */}
       <ReminderGrid
         data={todayReminders}
-        onToggleStatus={toggleStatus}
-        onDelete={deleteReminder}
-        onUpdate={updateReminder}
-        refreshing={refreshing}
-        onRefresh={refreshReminders}
+        onToggleStatus={toggleStatus} // bấm vào đổi trạng thái hoàn thành
+        onDelete={deleteReminder}     // bấm vào xóa nhắc nhở
+        onUpdate={updateReminder}     // chỉnh sửa nhắc nhở
+        refreshing={refreshing}       // trạng thái kéo để reload
+        onRefresh={refreshReminders}  // hàm kéo để reload
       />
     </SafeAreaView>
   );
 }
 
+// Style cho TodayRemindersScreen
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16 },
   title: { fontSize: 20, fontWeight: 'bold', marginVertical: 12 },
