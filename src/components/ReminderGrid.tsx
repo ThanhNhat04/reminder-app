@@ -1,6 +1,47 @@
+// // src/components/ReminderGrid.tsx
+// import React from 'react';
+// import { FlatList } from 'react-native';
+// import ReminderItem from './ReminderItem';
+// import { Reminder } from '../hooks/useReminders';
+
+// interface Props {
+//   data: Reminder[];
+//   onToggleStatus: (id: string) => void;
+//   onDelete: (id: string) => void;
+//   onUpdate: (
+//     id: string,
+//     data: { title: string; date: Date; time: Date; note: string }
+//   ) => void;
+// }
+
+// export default function ReminderGrid({
+//   data,
+//   onToggleStatus,
+//   onDelete,
+//   onUpdate,
+// }: Props) {
+//   return (
+//     <FlatList
+//       data={data}
+//       keyExtractor={item => item.id}
+//       renderItem={({ item }) => (
+//         <ReminderItem
+//           item={item}
+//           onToggleStatus={onToggleStatus}
+//           onDelete={onDelete}
+//           onUpdate={onUpdate}
+//         />
+//       )}
+//       numColumns={2}
+//       contentContainerStyle={{ paddingBottom: 20 }}
+//     />
+//   );
+// }
+
+
 // src/components/ReminderGrid.tsx
 import React from 'react';
-import { FlatList } from 'react-native';
+import { FlatList, RefreshControl } from 'react-native';
 import ReminderItem from './ReminderItem';
 import { Reminder } from '../hooks/useReminders';
 
@@ -12,6 +53,8 @@ interface Props {
     id: string,
     data: { title: string; date: Date; time: Date; note: string }
   ) => void;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 export default function ReminderGrid({
@@ -19,6 +62,8 @@ export default function ReminderGrid({
   onToggleStatus,
   onDelete,
   onUpdate,
+  refreshing = false,
+  onRefresh,
 }: Props) {
   return (
     <FlatList
@@ -34,6 +79,11 @@ export default function ReminderGrid({
       )}
       numColumns={2}
       contentContainerStyle={{ paddingBottom: 20 }}
+      refreshControl={
+        onRefresh ? (
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        ) : undefined
+      }
     />
   );
 }
