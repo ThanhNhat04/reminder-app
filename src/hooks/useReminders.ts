@@ -1,12 +1,11 @@
-// src/hooks/useReminders.ts
 // import { useEffect, useState } from 'react';
 // import { loadReminders, saveReminders } from '../utils/storage';
 
 // export interface Reminder {
 //   id: string;
 //   title: string;
-//   date: string; // ISO string
-//   time: string; // ISO string
+//   date: string; 
+//   time: string; 
 //   note: string;
 //   status: boolean;
 // }
@@ -14,16 +13,21 @@
 // export function useReminders() {
 //   const [reminders, setReminders] = useState<Reminder[]>([]);
 //   const [loading, setLoading] = useState(true);
+//   const [refreshing, setRefreshing] = useState(false);
+
+//   const loadAll = async () => {
+//     const data = await loadReminders();
+//     const normalized = data.map(r => ({
+//       ...r,
+//       note: r.note ?? '',
+//       status: typeof r.status === 'boolean' ? r.status : false,
+//     }));
+//     setReminders(normalized);
+//   };
 
 //   useEffect(() => {
 //     (async () => {
-//       const data = await loadReminders();
-//       const normalized = data.map(r => ({
-//         ...r,
-//         note: r.note ?? '',
-//         status: typeof r.status === 'boolean' ? r.status : false,
-//       }));
-//       setReminders(normalized);
+//       await loadAll();
 //       setLoading(false);
 //     })();
 //   }, []);
@@ -80,13 +84,21 @@
 //     await persist(updated);
 //   };
 
+//   const refreshReminders = async () => {
+//     setRefreshing(true);
+//     await loadAll();
+//     setRefreshing(false);
+//   };
+
 //   return {
 //     reminders,
 //     loading,
+//     refreshing,
 //     addReminder,
 //     toggleStatus,
 //     deleteReminder,
 //     updateReminder,
+//     refreshReminders,
 //   };
 // }
 
@@ -94,12 +106,13 @@
 // src/hooks/useReminders.ts
 import { useEffect, useState } from 'react';
 import { loadReminders, saveReminders } from '../utils/storage';
+import { scheduleNotification, cancelNotification } from '../utils/notifications';
 
 export interface Reminder {
   id: string;
   title: string;
-  date: string; // ISO string
-  time: string; // ISO string
+  date: string; // ISO string (chỉ phần ngày)
+  time: string; // ISO string (chỉ phần giờ)
   note: string;
   status: boolean;
 }
@@ -107,21 +120,24 @@ export interface Reminder {
 export function useReminders() {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const loadAll = async () => {
-    const data = await loadReminders();
-    const normalized = data.map(r => ({
-      ...r,
-      note: r.note ?? '',
-      status: typeof r.status === 'boolean' ? r.status : false,
-    }));
-    setReminders(normalized);
+  // helper ghép date + time thành Date
+  const toDateTime = (dateISO: string, timeISO: string) => {
+    const d = new Date(dateISO);
+    const t = new Date(timeISO);
+    return new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate(),
+      t.getHours(),
+      t.getMinutes()
+    );
   };
 
   useEffect(() => {
     (async () => {
-      await loadAll();
+      const data = await loadReminders();
+      setReminders(data);
       setLoading(false);
     })();
   }, []);
@@ -146,18 +162,16 @@ export function useReminders() {
       status: false,
     };
     await persist([newItem, ...reminders]);
-  };
 
-  const toggleStatus = async (id: string) => {
-    const updated = reminders.map(r =>
-      r.id === id ? { ...r, status: !r.status } : r
-    );
-    await persist(updated);
+    // lên lịch notification
+    const dt = toDateTime(item.date.toISOString(), item.time.toISOString());
+    scheduleNotification(newItem.id, newItem.title, dt);
   };
 
   const deleteReminder = async (id: string) => {
     const filtered = reminders.filter(r => r.id !== id);
     await persist(filtered);
+    cancelNotification(id);
   };
 
   const updateReminder = async (
@@ -176,22 +190,26 @@ export function useReminders() {
         : r
     );
     await persist(updated);
+
+    // hủy và lên lịch lại
+    cancelNotification(id);
+    const dt = toDateTime(data.date.toISOString(), data.time.toISOString());
+    scheduleNotification(id, data.title, dt);
   };
 
-  const refreshReminders = async () => {
-    setRefreshing(true);
-    await loadAll();
-    setRefreshing(false);
+  const toggleStatus = async (id: string) => {
+    const updated = reminders.map(r =>
+      r.id === id ? { ...r, status: !r.status } : r
+    );
+    await persist(updated);
   };
 
   return {
     reminders,
     loading,
-    refreshing,
     addReminder,
-    toggleStatus,
     deleteReminder,
     updateReminder,
-    refreshReminders,
+    toggleStatus,
   };
 }
